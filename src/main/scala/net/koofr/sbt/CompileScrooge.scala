@@ -66,11 +66,6 @@ object CompileThriftScrooge extends Plugin {
     "output folder for generated scala files (defaults to sourceManaged)"
   )
 
-  val scroogeIsDirty = TaskKey[Boolean](
-    "scrooge-is-dirty",
-    "true if scrooge has decided it needs to regenerate the scala files from thrift sources"
-  )
-
   val scroogeGen = TaskKey[Seq[File]](
     "scrooge-gen",
     "generate scala code from thrift files using scrooge"
@@ -88,59 +83,55 @@ object CompileThriftScrooge extends Plugin {
     scroogeThriftIncludeFolders := Seq(),
     scroogeThriftNamespaceMap := Map(),
 
-    // look at includes and our sources to see if anything is newer than any of our output files
-    scroogeIsDirty <<= (
-      streams,
-      scroogeThriftSources,
-      scroogeThriftOutputFolder,
-      scroogeThriftIncludeFolders
-    ) map { (out, sources, outputDir, inc) =>
-      // figure out if we need to actually rebuild, based on mtimes.
-      val allSourceDeps = sources ++ inc.foldLeft(Seq[File]()) { (files, dir) =>
-        files ++ (dir ** "*.thrift").get
-      }
-      val sourcesLastModified:Seq[Long] = allSourceDeps.map(_.lastModified)
-      val newestSource = if (sourcesLastModified.size > 0) {
-        sourcesLastModified.max
-      } else {
-        Long.MaxValue
-      }
-      val outputsLastModified = (outputDir ** "*.scala").get.map(_.lastModified)
-      val oldestOutput = if (outputsLastModified.size > 0) {
-        outputsLastModified.min
-      } else {
-        Long.MinValue
-      }
-      oldestOutput < newestSource
-    },
-
     // actually run scrooge
     scroogeGen <<= (
       streams,
-      scroogeIsDirty,
+      cacheDirectory,
       scroogeThriftSources,
       scroogeThriftOutputFolder,
       scroogeFetch,
       scroogeBuildOptions,
       scroogeThriftIncludeFolders,
       scroogeThriftNamespaceMap
-    ) map { (out, isDirty, sources, outputDir, jar, opts, inc, ns) =>
-      // for some reason, sbt sometimes calls us multiple times, often with no source files.
+    ) map { (out, cache, sources, outputDir, jar, opts, inc, ns) =>
       outputDir.mkdirs()
-      if (isDirty && !sources.isEmpty) {
-        out.log.info("Generating scrooge thrift for %s ...".format(sources.mkString(", ")))
-        val sourcePaths = sources.mkString(" ")
-        val namespaceMappings = ns.map { case (k, v) =>
-          "-n " + k + "=" + v
-        }.mkString(" ")
-        val thriftIncludes = inc.map { folder =>
-          "-i " + folder.getAbsolutePath
-        }.mkString(" ")
-        val cmd = "java -jar %s %s %s %s -d %s -s %s".format(
-          jar, opts.mkString(" "), thriftIncludes, namespaceMappings,
-          outputDir.getAbsolutePath, sources.mkString(" "))
-        out.log.debug(cmd)
-        cmd ! out.log
+
+      // for some reason, sbt sometimes calls us multiple times, often with no source files.
+      if (!sources.isEmpty) {
+        val allSourceDeps = sources ++ inc.foldLeft(Seq[File]()) { (files, dir) =>
+          files ++ (dir ** "*.thrift").get
+        }
+
+        val cacheFile = cache / "sbt-scrooge"
+        val currentInfos = allSourceDeps.map(f => f.getAbsoluteFile() -> FileInfo.lastModified(f)).toMap
+
+        val (previousRelation, previousInfo) = Sync.readInfo(cacheFile)(FileInfo.lastModified.format)
+
+        if (previousInfo != currentInfos) {
+          out.log.info("Generating scrooge thrift for %s ...".format(sources.mkString(", ")))
+
+          val sourcePaths = sources.mkString(" ")
+
+          val namespaceMappings = ns.map { case (k, v) =>
+            "-n " + k + "=" + v
+          }.mkString(" ")
+
+          val thriftIncludes = inc.map { folder =>
+            "-i " + folder.getAbsolutePath
+          }.mkString(" ")
+
+          val cmd = "java -jar %s %s %s %s -d %s -s %s".format(
+            jar, opts.mkString(" "), thriftIncludes, namespaceMappings,
+            outputDir.getAbsolutePath, sources.mkString(" "))
+
+          out.log.debug(cmd)
+
+          cmd ! out.log
+
+          Sync.writeInfo(cacheFile,
+            Relation.empty[File, File],
+            currentInfos)(FileInfo.lastModified.format)
+        }
       }
       (outputDir ** "*.scala").get.toSeq
     },

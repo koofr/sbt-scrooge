@@ -8,11 +8,9 @@ object SbtScroogePlugin extends Build {
   ).settings(
     name := "sbt-scrooge",
     organization := "net.koofr",
-    version := "3.0.43",
+    version := "3.0.44",
     sbtPlugin := true,
 
-    resolvers += "Koofr Maven repo" at "http://koofr.github.com/repo/maven/",
-
-    libraryDependencies += "com.twitter" % "scrooge-generator" % "3.0.43"
+    resolvers += "Koofr Maven repo" at "http://koofr.github.com/repo/maven/"
   )
 }
