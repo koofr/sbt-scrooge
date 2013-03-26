@@ -53,10 +53,15 @@ object CompileThriftScrooge extends Plugin {
 
   val scroogeThriftSourceFolder = SettingKey[File](
     "scrooge-thrift-source-folder",
-    "directory containing thrift source files"
+    "directory containing thrift source files to compile"
   )
 
-  val scroogeThriftSources = SettingKey[Seq[File]](
+  val scroogeThriftExternalSourceFolder = SettingKey[File](
+    "scrooge-thrift-external-source-folder",
+    "directory containing external source files to compile"
+  )
+
+  val scroogeThriftSources = TaskKey[Seq[File]](
     "scrooge-thrift-sources",
     "thrift source files to compile"
   )
@@ -66,10 +71,16 @@ object CompileThriftScrooge extends Plugin {
     "output folder for generated scala files (defaults to sourceManaged)"
   )
 
+  val scroogeUnpackDeps = TaskKey[Seq[File]](
+    "scrooge-unpack-deps",
+    "unpack thrift files from dependencies")
+
   val scroogeGen = TaskKey[Seq[File]](
     "scrooge-gen",
     "generate scala code from thrift files using scrooge"
   )
+
+  val thriftConfig = config("thrift")
 
   /**
    * these settings will go into both the compile and test configurations.
@@ -78,10 +89,27 @@ object CompileThriftScrooge extends Plugin {
    */
   val genThriftSettings: Seq[Setting[_]] = Seq(
     scroogeThriftSourceFolder <<= (sourceDirectory) { _ / "thrift" },
-    scroogeThriftSources <<= (scroogeThriftSourceFolder) { srcDir => (srcDir ** "*.thrift").get },
+    scroogeThriftExternalSourceFolder <<= (target) { _ / "thrift_external" },
+
+    scroogeThriftSources <<= (
+      scroogeThriftSourceFolder,
+      scroogeUnpackDeps
+    ) map { (src, ext) => (src ** "*.thrift").get ++ ext },
+
     scroogeThriftOutputFolder <<= (sourceManaged) { _ / "scala" },
     scroogeThriftIncludeFolders := Seq(),
     scroogeThriftNamespaceMap := Map(),
+
+    scroogeUnpackDeps <<= (
+      classpathTypes,
+      update,
+      scroogeThriftExternalSourceFolder
+    ) map { (ct, r, t) =>
+      IO.createDirectory(t)
+      Classpaths.managedJars(thriftConfig, ct, r) flatMap { dep =>
+        IO.unzip(dep.data, t, "*.thrift").toSeq
+      }
+    },
 
     // actually run scrooge
     scroogeGen <<= (
@@ -116,7 +144,9 @@ object CompileThriftScrooge extends Plugin {
             "-n " + k + "=" + v
           }.mkString(" ")
 
-          val thriftIncludes = inc.map { folder =>
+          val srcDirs = sources map { _.getParentFile } distinct
+
+          val thriftIncludes = (srcDirs ++ inc).map { folder =>
             "-i " + folder.getAbsolutePath
           }.mkString(" ")
 
@@ -180,7 +210,7 @@ object CompileThriftScrooge extends Plugin {
       } else {
         jar
       }
-    }
+    },
+    ivyConfigurations += thriftConfig
   ) ++ inConfig(Test)(genThriftSettings) ++ inConfig(Compile)(genThriftSettings)
 }
-
