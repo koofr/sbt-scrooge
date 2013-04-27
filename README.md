@@ -20,7 +20,7 @@ See [the sbt page on plugins](https://github.com/harrah/xsbt/wiki/Plugins) for
 information on adding plugins. Usually, you need to add the following to your
 `project/plugins.sbt` file:
 
-    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.43")
+    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.45")
 
 If you use a `build.sbt` file, add this incantation:
 
@@ -35,7 +35,7 @@ Here's a working example `project/plugins.sbt`:
 
     resolvers += Resolver.url("Koofr repo", url("http://koofr.github.com/repo/releases/"))(Resolver.ivyStylePatterns)
     
-    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.43")
+    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.45")
 
 And `project/Build.scala`:
 
