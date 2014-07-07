@@ -1,0 +1,3 @@
+# check if the file gets created
+> scrooge-gen
+$ exists target/scala-2.10/src_managed/main/scala/testservice/TestService.scala

@@ -111,3 +111,9 @@ most likely to want to edit:
 To build the plugin locally and publish it to your local filesystem:
 
     $ sbt publish-local
+
+## Testing
+
+To test the plugin run `scripted` command in sbt:
+
+    $ sbt scripted

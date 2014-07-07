@@ -30,9 +30,14 @@ object CompileThriftScrooge extends Plugin {
     "the local scrooge jar file"
   )
 
+  val scroogeFetchUrl = SettingKey[String](
+    "scrooge-fetch-url",
+    "scrooge jar url"
+  )
+
   val scroogeFetch = TaskKey[File](
     "scrooge-fetch",
-    "fetch the scrooge zip package and unpack it into scrooge-cache-folder"
+    "fetch the scrooge jar and unpack it into scrooge-cache-folder"
   )
 
   // keys used for actual scrooge generation:
@@ -179,24 +184,29 @@ object CompileThriftScrooge extends Plugin {
       folder / (name + ".jar")
     },
 
+    scroogeFetchUrl <<= (scroogeVersion) { ver =>
+      val environment = System.getenv().asScala
+      val homeRepo = environment.get("SBT_PROXY_REPO") getOrElse "http://koofr.github.com/repo/maven"
+      val localRepo = System.getProperty("user.home") + "/.m2/repository/"
+      val jarPath = "/com/twitter/scrooge-generator/" + ver + "/scrooge-generator-" + ver + "-jar-with-dependencies.jar"
+
+      if (new File(localRepo + jarPath).exists) {
+        "file:" + localRepo + jarPath
+      } else {
+        homeRepo + jarPath
+      }
+    },
+
     scroogeFetch <<= (
       streams,
+      scroogeFetchUrl,
       scroogeCacheFolder,
       scroogeJar,
       scroogeVersion
-    ) map { (out, cacheFolder, jar, ver) =>
+    ) map { (out, fetchUrl, cacheFolder, jar, ver) =>
       if (!jar.exists) {
         out.log.info("Fetching scrooge " + ver + " ...")
 
-        val environment = System.getenv().asScala
-        val homeRepo = environment.get("SBT_PROXY_REPO") getOrElse "http://koofr.github.com/repo/maven"
-        val localRepo = System.getProperty("user.home") + "/.m2/repository/"
-        val jarPath = "/com/twitter/scrooge-generator/" + ver + "/scrooge-generator-" + ver + "-jar-with-dependencies.jar"
-        val fetchUrl = if (new File(localRepo + jarPath).exists) {
-          "file:" + localRepo + jarPath
-        } else {
-          homeRepo + jarPath
-        }
         out.log.info("Fetching from: " + fetchUrl)
 
         cacheFolder.asFile.mkdirs()
