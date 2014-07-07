@@ -6,7 +6,7 @@ import sbt._
 import Keys._
 
 /**
- * An sbt 0.12 plugin for generating thrift with scrooge.
+ * An sbt 0.13 plugin for generating thrift with scrooge.
  */
 object CompileThriftScrooge extends Plugin {
   // keys used to fetch scrooge:
