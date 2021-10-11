@@ -16,62 +16,36 @@ compile path.
 
 ## Using it
 
-See [the sbt page on plugins](https://github.com/harrah/xsbt/wiki/Plugins) for
-information on adding plugins. Usually, you need to add the following to your
-`project/plugins.sbt` file:
+Add following to your `project/plugins.sbt` file:
+
+    resolvers += Resolver.url("Koofr repo", url("http://koofr.github.com/repo/releases/"))(Resolver.ivyStylePatterns)
 
     addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.45")
 
-If you use a `build.sbt` file, add this incantation:
+And `build.sbt`:
 
     import net.koofr.sbt._
 
-    seq(CompileThriftScrooge.newSettings: _*)
+    CompileThriftScrooge.newSettings
 
-If you use `Build.scala`, add `CompileThriftScrooge.newSettings` to your
-settings list.
+    name := "yourproject"
 
-Here's a working example `project/plugins.sbt`:
+    organization := "com.example"
 
-    resolvers += Resolver.url("Koofr repo", url("http://koofr.github.com/repo/releases/"))(Resolver.ivyStylePatterns)
-    
-    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.45")
+    version := "1.0.0-SNAPSHOT"
 
-And `project/Build.scala`:
+    scalaVersion := "2.10.4"
 
-    import sbt._
-    import Keys._
-    import com.twitter.sbt._
-    
-    object YourProject extends Build {
-      val finagleVersion = "3.0.0"
-    
-      lazy val root = Project(
-        id = "yourproject",
-        base = file("."),
-        settings = Project.defaultSettings ++
-          StandardProject.newSettings ++
-          CompileThriftScrooge.newSettings
-      ).settings(
-        name := "yourproject",
-        organization := "com.example",
-        version := "1.0.0-SNAPSHOT",
-        scalaVersion := "2.9.1",
-        
-        libraryDependencies ++= Seq(
-          "org.apache.thrift" % "libthrift" % "0.8.0" intransitive,
-          "com.twitter" %% "finagle-core" % "6.2.0",
-          "com.twitter" %% "finagle-thrift" % "6.2.0",
-          "com.twitter" %% "finagle-ostrich4" % "6.2.0",
-          "com.twitter" %% "finagle-redis" % "6.2.0",
-          "com.twitter" % "scrooge-runtime" % "3.0.43"
-        ),
-        
-        CompileThriftScrooge.scroogeVersion := "3.0.43",
-        CompileThriftScrooge.scroogeBuildOptions := List("--finagle")
-      )
-    }
-  
+    libraryDependencies ++= Seq(
+      "org.apache.thrift" % "libthrift" % "0.8.0" intransitive,
+      "com.twitter" %% "finagle-core" % "6.2.0",
+      "com.twitter" %% "finagle-thrift" % "6.2.0",
+      "com.twitter" %% "finagle-ostrich4" % "6.2.0",
+      "com.twitter" %% "finagle-redis" % "6.2.0",
+      "com.twitter" % "scrooge-runtime" % "3.0.43"
+    )
+
+    CompileThriftScrooge.scroogeBuildOptions := List("--finagle")
 
 ## Configuration
 
