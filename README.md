@@ -18,9 +18,9 @@ compile path.
 
 Add following to your `project/plugins.sbt` file:
 
-    resolvers += Resolver.url("Koofr repo", url("http://koofr.github.com/repo/releases/"))(Resolver.ivyStylePatterns)
+    resolvers += Resolver.url("Koofr repo", url("https://koofr.github.io/repo/releases/"))
 
-    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.0.45")
+    addSbtPlugin("net.koofr" % "sbt-scrooge" % "3.1.1")
 
 And `build.sbt`:
 
@@ -84,7 +84,13 @@ most likely to want to edit:
 
 To build the plugin locally and publish it to your local filesystem:
 
-    $ sbt publish-local
+    $ sbt publish
+
+To change the publish path add the following to `local.sbt`:
+
+```
+publishTo := Some(Resolver.file("file", new File("/path/to/maven/")))
+```
 
 ## Testing
 

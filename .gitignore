@@ -12,4 +12,4 @@ lib_managed/
 .classpath
 .project
 .scala_dependencies
-project/local.sbt
+local.sbt

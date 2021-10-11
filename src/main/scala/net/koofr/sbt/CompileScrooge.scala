@@ -186,7 +186,7 @@ object CompileThriftScrooge extends Plugin {
 
     scroogeFetchUrl <<= (scroogeVersion) { ver =>
       val environment = System.getenv().asScala
-      val homeRepo = environment.get("SBT_PROXY_REPO") getOrElse "http://koofr.github.com/repo/maven"
+      val homeRepo = environment.get("SBT_PROXY_REPO") getOrElse "https://koofr.github.io/repo/maven"
       val localRepo = System.getProperty("user.home") + "/.m2/repository/"
       val jarPath = "/com/twitter/scrooge-generator/" + ver + "/scrooge-generator-" + ver + "-jar-with-dependencies.jar"
 
